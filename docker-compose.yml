@@ -1,0 +1,23 @@
+services:
+  backend_task:
+    image: ${DOCKER_REGISTRY-}backendtask
+    build:
+      context: .
+      dockerfile: BackEnd_Task/Dockerfile
+    networks:
+        - local
+
+  postgres-db:
+    container_name: postgres-db
+    image: postgres:15-alpine
+    networks:
+        - local
+    environment:
+        - POSTGRES_DB=postgres
+        - POSTGRES_PASSWORD=1234
+    ports:
+        - "5432:5432"
+
+networks:
+    local:
+        driver: bridge
