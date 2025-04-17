@@ -1,6 +1,8 @@
 ﻿using Application.Abstractions;
+using Application.Common.AppResults;
 using Application.Dto;
 using Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace Application.Services
 {
@@ -8,32 +10,55 @@ namespace Application.Services
     {
         Task<IEnumerable<ApplicationUser>> GetAsync();
         Task<bool> CreateAsync(UserRequestDto request);
+        Task<AppResult<string>> SignInAsync(UserRequestDto request);
     }
 
     public class UserService : IUserService
     {
-        private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository userRepository)
+        private readonly IJwtProvider _jwtProvider;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+
+        public UserService( SignInManager<ApplicationUser> signInManager, IJwtProvider jwtProvider, UserManager<ApplicationUser> userManager)
         {
-            _userRepository = userRepository;
+            _signInManager = signInManager;
+            _jwtProvider = jwtProvider;
+            _userManager = userManager;
         }
 
         public async Task<IEnumerable<ApplicationUser>> GetAsync()
         {
-            var rs = await _userRepository.GetAsync();
+            var rs = _userManager.Users.ToList();
             return rs;
         }
+
         public async Task<bool> CreateAsync(UserRequestDto request)
         {
             var applicationUser = new ApplicationUser
             {
                 UserName = request.UserName,
                 Email = request.Email,
-                PasswordHash = request.Password,
+                PasswordHash = request.Password
             };
-            var rs = await _userRepository.CreateAsync(applicationUser, request.Password);
+            var rs =await _userManager.CreateAsync(applicationUser, request.Password);
             
-            return rs;
+            return rs.Succeeded;
+        }
+
+        public async Task<AppResult<string>> SignInAsync(UserRequestDto request)
+        {
+            var user = await _userManager.FindByNameAsync(request.UserName).ConfigureAwait(false);
+
+            if (user == null)
+                return AppResult<string>.Error("User name or password not match!");
+
+            var checkPass = await _userManager.CheckPasswordAsync(user, request.Password).ConfigureAwait(false);
+            if (!checkPass)
+                return AppResult<string>.Error("User name or password not match!");
+
+            var token = _jwtProvider.Genereate(user!);
+
+            return AppResult<string>.Success(token);
         }
     }
 }

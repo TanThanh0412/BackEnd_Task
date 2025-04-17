@@ -16,6 +16,7 @@ namespace BackEnd_Task.Extentions
             //Users
             app.MapUserEndPoints();
             app.MapUserCreateEndPoints();
+            app.MapUserSignInEndPoints();
         }
     }
 }

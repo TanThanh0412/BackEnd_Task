@@ -1,5 +1,6 @@
 ﻿using Application.Dto;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BackEnd_Task.EndPoints
 {
@@ -7,7 +8,7 @@ namespace BackEnd_Task.EndPoints
     {
         public static void MapTasksEndPoints(this WebApplication app)
         {
-            app.MapGet("/tasks", async (ITasksService tasksService) =>
+            app.MapGet("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async ( ITasksService tasksService) =>
             {
                 var rs = await tasksService.GetAsync();
                 return Results.Ok(rs);
@@ -16,7 +17,7 @@ namespace BackEnd_Task.EndPoints
 
         public static void MapTasksGetByIdEndPoints(this WebApplication app)
         {
-            app.MapGet("/tasks/{id}", async (ITasksService tasksService, Guid id) =>
+            app.MapGet("/tasks/{id}", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, Guid id) =>
             {
                 var rs = await tasksService.GetByIdAsync(id);
                 return Results.Ok(rs);
@@ -25,7 +26,7 @@ namespace BackEnd_Task.EndPoints
 
         public static void MapTasksCreateEndPoints(this WebApplication app)
         {
-            app.MapPost("/tasks", async (ITasksService tasksService, TaskRequestDto task) =>
+            app.MapPost("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, TaskRequestDto task) =>
             {
                 var rs = await tasksService.CreateAsync(task);
                 return Results.Ok(rs);
@@ -34,7 +35,7 @@ namespace BackEnd_Task.EndPoints
 
         public static void MapTasksUpdateEndPoints(this WebApplication app)
         {
-            app.MapPut("/tasks", async (ITasksService tasksService, TaskRequestDto task) =>
+            app.MapPut("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, TaskRequestDto task) =>
             {
                 var rs = await tasksService.UpdateAsync(task);
                 return Results.Ok(rs);
@@ -43,7 +44,7 @@ namespace BackEnd_Task.EndPoints
 
         public static void MapTasksDeleteEndPoints(this WebApplication app)
         {
-            app.MapDelete("/tasks/{id}", async (ITasksService tasksService, Guid id) =>
+            app.MapDelete("/tasks/{id}", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, Guid id) =>
             {
                 var rs = await tasksService.DeleteAsync(id);
                 return Results.Ok(rs);

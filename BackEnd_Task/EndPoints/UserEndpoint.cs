@@ -23,6 +23,13 @@ namespace BackEnd_Task.EndPoints
             });
         }
 
-
+        public static void MapUserSignInEndPoints(this WebApplication app)
+        {
+            app.MapPost("/users/signin", async (IUserService userService, UserRequestDto user) =>
+            {
+                var rs = await userService.SignInAsync(user);
+                return Results.Ok(rs);
+            });
+        }
     }
 }
