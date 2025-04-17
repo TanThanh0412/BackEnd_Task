@@ -1,13 +1,17 @@
 ﻿using Application.Dto;
 using Domain.Entities;
 using Application.Abstractions;
+using Microsoft.AspNetCore.Identity;
 
 namespace Application.Services
 {
     public interface ITasksService
     {
         Task<IEnumerable<Tasks>> GetAsync();
+        Task<Tasks?> GetByIdAsync(Guid Id);
         Task<bool> CreateAsync(TaskRequestDto request);
+        Task<bool> UpdateAsync(TaskRequestDto request);
+        Task<bool> DeleteAsync(Guid Id);
     }
 
     public class TasksService : ITasksService
@@ -27,6 +31,13 @@ namespace Application.Services
             return rs;
         }
 
+        public async Task<Tasks?> GetByIdAsync(Guid Id)
+        {
+            var task = await _tasksRepository.GetByIdAsync(Id);
+
+            return task;
+        }
+
         public async Task<bool> CreateAsync(TaskRequestDto request)
         {
             var task = new Tasks
@@ -40,10 +51,43 @@ namespace Application.Services
                 CreatedById = request.UserId,
             };
             await _tasksRepository.CreateAsync(task);
-            
+
             var rsSaveChange = await _unitOfWork.SaveChangesAsync();
-            
+
             return rsSaveChange;
         }
-    } 
+
+        public async Task<bool> UpdateAsync(TaskRequestDto request)
+        {
+            if (request.Id == null)
+                return false;
+
+            var task = await _tasksRepository.GetByIdAsync(request.Id);
+            if(task != null)
+            {
+                task.Title = request.Title;
+                task.Description = request.Description;
+                task.Status = request.Status;
+                task.UserId = request.UserId;
+                task.DueDate = request.DueDate;    
+
+                await _tasksRepository.UpdateAsync(task);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+        public async Task<bool> DeleteAsync(Guid Id)
+        {
+            var task = await _tasksRepository.GetByIdAsync(Id);
+            if (task == null)
+                return false;
+
+            await _tasksRepository.DeleteAsync(task);
+            var rsSaveChange = await _unitOfWork.SaveChangesAsync();
+
+            return rsSaveChange;
+        }
+    }
 }

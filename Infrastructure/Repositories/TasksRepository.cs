@@ -24,5 +24,24 @@ namespace Infrastructure.Repositories
         {
             var rs = await _context.Tasks.AddAsync(task);
         }
+
+        public async Task<Tasks?> GetByIdAsync(Guid? Id)
+        {
+            var task = await _context.Tasks.FirstOrDefaultAsync(x => x.Id == Id);
+            if (task == null)
+                return null;
+
+            return task;
+        }
+
+        public async Task UpdateAsync(Tasks task)
+        {
+            _context.Tasks.Update(task);
+        }
+
+        public async Task DeleteAsync(Tasks task)
+        {            
+            _context.Tasks.Remove(task);
+        }
     }
 }
