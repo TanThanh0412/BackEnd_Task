@@ -9,7 +9,6 @@ namespace BackEnd_Task.Extentions
             //Tasks
             app.MapTasksEndPoints();
             app.MapTasksCreateEndPoints();
-            app.MapTasksGetByIdEndPoints();
             app.MapTasksUpdateEndPoints();
             app.MapTasksDeleteEndPoints();
             app.MapTasksUpdateStatusEndPoints();

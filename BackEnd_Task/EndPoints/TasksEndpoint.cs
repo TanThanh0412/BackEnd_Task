@@ -15,15 +15,6 @@ namespace BackEnd_Task.EndPoints
             });
         }
 
-        public static void MapTasksGetByIdEndPoints(this WebApplication app)
-        {
-            app.MapGet("/tasks/{id}", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, Guid id) =>
-            {
-                var rs = await tasksService.GetByIdAsync(id);
-                return Results.Ok(rs);
-            });
-        }
-
         public static void MapTasksCreateEndPoints(this WebApplication app)
         {
             app.MapPost("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, TaskRequestDto task) =>
