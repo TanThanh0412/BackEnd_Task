@@ -1,16 +1,19 @@
 ﻿using Application.Dto;
 using Domain.Entities;
 using Application.Abstractions;
-using Microsoft.AspNetCore.Identity;
+using Application.Common.AppResults;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Services
 {
     public interface ITasksService
     {
-        Task<IEnumerable<Tasks>> GetAsync();
+        Task<AppResult<IEnumerable<Tasks>>> GetAsync();
         Task<Tasks?> GetByIdAsync(Guid Id);
         Task<bool> CreateAsync(TaskRequestDto request);
         Task<bool> UpdateAsync(TaskRequestDto request);
+        Task<bool> UpdateTaskStatusAsync(TaskUpdateStatusRequestDto request);
         Task<bool> DeleteAsync(Guid Id);
     }
 
@@ -18,17 +21,23 @@ namespace Application.Services
     {
         public ITasksRepository _tasksRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public TasksService(ITasksRepository tasksRepository, IUnitOfWork unitOfWork)
+        public TasksService(ITasksRepository tasksRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor)
         {
             _tasksRepository = tasksRepository;
             _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<IEnumerable<Tasks>> GetAsync()
+        public async Task<AppResult<IEnumerable<Tasks>>> GetAsync()
         {
-            var rs = await _tasksRepository.GetAsync();
-            return rs;
+            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return AppResult<IEnumerable<Tasks>>.Error("Authen");
+            var rs = (await _tasksRepository.GetAsync()).Where(x => x.UserId == Guid.Parse(userId));
+            
+            return AppResult<IEnumerable<Tasks>>.Success(rs);
         }
 
         public async Task<Tasks?> GetByIdAsync(Guid Id)
@@ -40,27 +49,38 @@ namespace Application.Services
 
         public async Task<bool> CreateAsync(TaskRequestDto request)
         {
-            var task = new Tasks
+            try
             {
-                Title = request.Title,
-                Description = request.Description,
-                Status = request.Status,
-                UserId = request.UserId,
-                DueDate = request.DueDate,
-                CreatedDate = DateTime.UtcNow,
-                CreatedById = request.UserId,
-            };
-            await _tasksRepository.CreateAsync(task);
+                var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var rsSaveChange = await _unitOfWork.SaveChangesAsync();
+                var task = new Tasks
+                {
+                    Title = request.Title,
+                    Description = request.Description,
+                    Status = request.Status,
+                    UserId = Guid.Parse(userId),
+                    DueDate = request.DueDate.ToUniversalTime(),
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedById = Guid.Parse(userId),
+                };
+                await _tasksRepository.CreateAsync(task);
 
-            return rsSaveChange;
+                var rsSaveChange = await _unitOfWork.SaveChangesAsync();
+
+                return rsSaveChange;
+            }
+            catch (Exception ex)
+            {
+                return false;
+                throw;
+            }
         }
 
         public async Task<bool> UpdateAsync(TaskRequestDto request)
         {
             if (request.Id == null)
                 return false;
+            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var task = await _tasksRepository.GetByIdAsync(request.Id);
             if(task != null)
@@ -68,8 +88,8 @@ namespace Application.Services
                 task.Title = request.Title;
                 task.Description = request.Description;
                 task.Status = request.Status;
-                task.UserId = request.UserId;
-                task.DueDate = request.DueDate;    
+                task.UserId = Guid.Parse(userId);
+                task.DueDate = request.DueDate.ToUniversalTime();    
 
                 await _tasksRepository.UpdateAsync(task);
                 await _unitOfWork.SaveChangesAsync();
@@ -78,6 +98,28 @@ namespace Application.Services
 
             return false;
         }
+
+        public async Task<bool> UpdateTaskStatusAsync(TaskUpdateStatusRequestDto request)
+        {
+            if (request.Id == null)
+                return false;
+            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var task = await _tasksRepository.GetByIdAsync(request.Id);
+            if (task != null)
+            {
+                task.Status = request.Status;
+
+                await _tasksRepository.UpdateAsync(task);
+
+                await _unitOfWork.SaveChangesAsync();
+                
+                return true;
+            }
+
+            return false;
+        }
+
         public async Task<bool> DeleteAsync(Guid Id)
         {
             var task = await _tasksRepository.GetByIdAsync(Id);

@@ -9,7 +9,7 @@ namespace Application.Services
     public interface IUserService
     {
         Task<IEnumerable<ApplicationUser>> GetAsync();
-        Task<bool> CreateAsync(UserRequestDto request);
+        Task<bool> CreateAsync(UserRegisterDto request);
         Task<AppResult<string>> SignInAsync(UserRequestDto request);
     }
 
@@ -32,7 +32,7 @@ namespace Application.Services
             return rs;
         }
 
-        public async Task<bool> CreateAsync(UserRequestDto request)
+        public async Task<bool> CreateAsync(UserRegisterDto request)
         {
             var applicationUser = new ApplicationUser
             {

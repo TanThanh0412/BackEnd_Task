@@ -42,6 +42,15 @@ namespace BackEnd_Task.EndPoints
             });
         }
 
+        public static void MapTasksUpdateStatusEndPoints(this WebApplication app)
+        {
+            app.MapPut("/tasks/status", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, TaskUpdateStatusRequestDto task) =>
+            {
+                var rs = await tasksService.UpdateTaskStatusAsync(task);
+                return Results.Ok(rs);
+            });
+        }
+
         public static void MapTasksDeleteEndPoints(this WebApplication app)
         {
             app.MapDelete("/tasks/{id}", [Authorize(AuthenticationSchemes = "Bearer")] async (ITasksService tasksService, Guid id) =>
