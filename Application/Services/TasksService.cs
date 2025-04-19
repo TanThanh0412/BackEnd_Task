@@ -9,7 +9,7 @@ namespace Application.Services
 {
     public interface ITasksService
     {
-        Task<AppResult<IEnumerable<Tasks>>> GetAsync();
+        Task<AppResult<IEnumerable<Tasks>>> GetAsync(int order);
         Task<Tasks?> GetByIdAsync(Guid Id);
         Task<bool> CreateAsync(TaskRequestDto request);
         Task<bool> UpdateAsync(TaskRequestDto request);
@@ -30,13 +30,15 @@ namespace Application.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<AppResult<IEnumerable<Tasks>>> GetAsync()
+        public async Task<AppResult<IEnumerable<Tasks>>> GetAsync(int order)
         {
             var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
                 return AppResult<IEnumerable<Tasks>>.Error("Authen");
             var rs = (await _tasksRepository.GetAsync()).Where(x => x.UserId == Guid.Parse(userId));
-            
+
+            rs = order == 1 ? rs.OrderByDescending(x => x.DueDate) : rs.OrderBy(x => x.DueDate);
+
             return AppResult<IEnumerable<Tasks>>.Success(rs);
         }
 

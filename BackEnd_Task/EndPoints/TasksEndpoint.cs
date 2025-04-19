@@ -8,9 +8,9 @@ namespace BackEnd_Task.EndPoints
     {
         public static void MapTasksEndPoints(this WebApplication app)
         {
-            app.MapGet("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async ( ITasksService tasksService) =>
+            app.MapGet("/tasks", [Authorize(AuthenticationSchemes = "Bearer")] async ( ITasksService tasksService, int order) =>
             {
-                var rs = await tasksService.GetAsync();
+                var rs = await tasksService.GetAsync(order);
                 return Results.Ok(rs);
             });
         }
